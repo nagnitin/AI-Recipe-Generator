@@ -6,31 +6,14 @@ import base64
 from datetime import datetime
 import io
 
-# Configure Gemini API key (no fallback public key)
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    st.error("No Google API key found. Please set the GOOGLE_API_KEY environment variable.")
-    st.stop()
-else:
-    try:
-        genai.configure(api_key=api_key)
-    except Exception as e:
-        st.error(f"Failed to configure Gemini API: {e}")
-        st.stop()
+# Configure Gemini API key
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY", "AIzaSyC0lnDHppWlt3fldHJnx5wxDO73Dvi1ULQ"))
 
-# Initialize Gemini models with error handling
-try:
-    vision_model = genai.GenerativeModel("models/gemini-pro-vision")
-    text_model = genai.GenerativeModel("models/gemini-pro")
-except Exception as e:
-    st.error(f"Failed to initialize Gemini model: {e}")
-    st.stop()
+# Initialize Gemini model
+model = genai.GenerativeModel("models/gemini-1.5-flash")
 
-def pil_image_to_bytes(image):
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    buf.seek(0)
-    return buf.read()
+# Initialize chat model for conversation
+chat_model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 def initialize_session_state():
     """Initialize session state variables"""
@@ -53,44 +36,31 @@ Each recipe should have:
 - Ingredient list
 - Steps (in bullet points)
 """
-    try:
-        image_bytes = pil_image_to_bytes(image)
-        response = vision_model.generate_content([
-            {"text": prompt},
-            {"inline_data": {"mime_type": "image/png", "data": image_bytes}}
-        ])
-        return response.text
-    except Exception as e:
-        st.error(f"Gemini API error: {e}")
-        return "Sorry, I couldn't process the image. Please try again later."
+    response = model.generate_content([prompt, image])
+    return response.text
 
 def chat_with_ai(message, image=None):
     """Chat with AI about recipes and cooking"""
-    try:
-        if image:
-            prompt = f"""
+    if image:
+        # If image is provided, analyze it and respond
+        prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
 
 Please analyze this image and respond to their question. If they're asking about ingredients or recipes, 
 provide helpful cooking advice, recipe suggestions, or ingredient information based on what you see in the image.
 """
-            image_bytes = pil_image_to_bytes(image)
-            response = vision_model.generate_content([
-                {"text": prompt},
-                {"inline_data": {"mime_type": "image/png", "data": image_bytes}}
-            ])
-        else:
-            prompt = f"""
+        response = chat_model.generate_content([prompt, image])
+    else:
+        # Text-only conversation
+        prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
 
 Please provide helpful cooking advice, recipe suggestions, cooking tips, or answer any culinary questions they might have.
 Be friendly and informative in your response.
 """
-            response = text_model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"Gemini API error: {e}")
-        return "Sorry, I couldn't process your request. Please try again later."
+        response = chat_model.generate_content(prompt)
+    
+    return response.text
 
 def display_chat_message(role, content, image=None):
     """Display a chat message with optional image"""
@@ -306,15 +276,13 @@ def chat_page():
         if not st.session_state.chat_camera_on:
             if st.button("Turn On Camera", key="chat_camera_on_btn", use_container_width=True):
                 st.session_state.chat_camera_on = True
-                st.rerun()
-            return
+                st.experimental_rerun()
             camera_image = None
         else:
-            camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
+            camera_image = st.camera_input("📸 Take a photo", key="chat_camera_default")
             if st.button("Turn Off Camera", key="chat_camera_off_btn", use_container_width=True):
                 st.session_state.chat_camera_on = False
-                st.rerun()
-            return
+                st.experimental_rerun()
     else:
         # Desktop layout - side by side
         col1, col2 = st.columns([3, 1])
@@ -332,15 +300,13 @@ def chat_page():
             if not st.session_state.chat_camera_on:
                 if st.button("Turn On Camera", key="chat_camera_on_btn"):
                     st.session_state.chat_camera_on = True
-                    st.rerun()
-                return
+                    st.experimental_rerun()
                 camera_image = None
             else:
-                camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
+                camera_image = st.camera_input("📸 Take a photo", key="chat_camera_default")
                 if st.button("Turn Off Camera", key="chat_camera_off_btn"):
                     st.session_state.chat_camera_on = False
-                    st.rerun()
-                return
+                    st.experimental_rerun()
     # Handle user input
     if user_input or uploaded_image or ("chat_camera_on" in st.session_state and st.session_state.chat_camera_on and camera_image):
         current_image = None
@@ -506,7 +472,7 @@ def recipe_generator_page():
                     response_text = extract_ingredients_and_recipes(image)
                     st.subheader("🍽️ Recipe Suggestions")
                     st.info(response_text)
-    
+
     with tab2:
         st.markdown("**📸 Camera Capture (Mobile Supported)**")
         if "recipe_camera_on" not in st.session_state:
@@ -514,15 +480,13 @@ def recipe_generator_page():
         if not st.session_state.recipe_camera_on:
             if st.button("Turn On Camera", key="recipe_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = True
-                st.rerun()
-            return
+                st.experimental_rerun()
             camera_photo = None
         else:
-            camera_photo = st.camera_input("📸 Take photo", key="recipe_camera_default")
+            camera_photo = st.camera_input("📸 Take a photo of your ingredients", key="recipe_camera_default")
             if st.button("Turn Off Camera", key="recipe_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = False
-                st.rerun()
-            return
+                st.experimental_rerun()
         image = None
         if camera_photo is not None:
             image = Image.open(camera_photo)
@@ -547,15 +511,13 @@ def recipe_generator_page():
         if not st.session_state.recipe_chat_camera_on:
             if st.button("Turn On Camera", key="recipe_chat_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = True
-                st.rerun()
-            return
+                st.experimental_rerun()
             chat_camera = None
         else:
-            chat_camera = st.camera_input("📸 Take photo", key="recipe_chat_camera_default")
+            chat_camera = st.camera_input("📸 Take a photo", key="recipe_chat_camera_default")
             if st.button("Turn Off Camera", key="recipe_chat_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = False
-                st.rerun()
-            return
+                st.experimental_rerun()
         current_image = None
         if chat_image:
             current_image = Image.open(chat_image)
