@@ -18,13 +18,19 @@ else:
         st.error(f"Failed to configure Gemini API: {e}")
         st.stop()
 
-# Initialize Gemini model with error handling
+# Initialize Gemini models with error handling
 try:
-    model = genai.GenerativeModel("models/gemini-1.5-flash")
-    chat_model = genai.GenerativeModel("models/gemini-1.5-flash")
+    vision_model = genai.GenerativeModel("models/gemini-pro-vision")
+    text_model = genai.GenerativeModel("models/gemini-pro")
 except Exception as e:
     st.error(f"Failed to initialize Gemini model: {e}")
     st.stop()
+
+def pil_image_to_bytes(image):
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    buf.seek(0)
+    return buf.read()
 
 def initialize_session_state():
     """Initialize session state variables"""
@@ -48,7 +54,8 @@ Each recipe should have:
 - Steps (in bullet points)
 """
     try:
-        response = model.generate_content([prompt, image])
+        image_bytes = pil_image_to_bytes(image)
+        response = vision_model.generate_content([prompt, image_bytes])
         return response.text
     except Exception as e:
         st.error(f"Gemini API error: {e}")
@@ -64,7 +71,8 @@ You are a helpful cooking assistant. The user said: "{message}"
 Please analyze this image and respond to their question. If they're asking about ingredients or recipes, 
 provide helpful cooking advice, recipe suggestions, or ingredient information based on what you see in the image.
 """
-            response = chat_model.generate_content([prompt, image])
+            image_bytes = pil_image_to_bytes(image)
+            response = vision_model.generate_content([prompt, image_bytes])
         else:
             prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
@@ -72,7 +80,7 @@ You are a helpful cooking assistant. The user said: "{message}"
 Please provide helpful cooking advice, recipe suggestions, cooking tips, or answer any culinary questions they might have.
 Be friendly and informative in your response.
 """
-            response = chat_model.generate_content(prompt)
+            response = text_model.generate_content(prompt)
         return response.text
     except Exception as e:
         st.error(f"Gemini API error: {e}")
