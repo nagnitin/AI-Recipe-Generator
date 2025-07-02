@@ -250,7 +250,7 @@ def chat_page():
     st.markdown("Chat with your AI cooking assistant! Ask questions, get recipe advice, or upload images for analysis.")
     
     # Responsive info box
-    st.info("📱 **Mobile Tip**: Use your browser's camera icon to switch between front and rear cameras. Use the camera mode selector below.")
+    st.info("📱 **Mobile Tip**: Use your browser's camera icon to switch between front and rear cameras.")
     
     # Chat interface with responsive container
     chat_container = st.container()
@@ -261,58 +261,40 @@ def chat_page():
             display_chat_message(message["role"], message["content"], message.get("image"))
     
     # Responsive input area
-    # Use different layouts for mobile vs desktop
     if st.get_option("server.maxUploadSize") and st.get_option("server.maxUploadSize") < 768:
         # Mobile layout - stacked
         user_input = st.chat_input("Ask me about cooking, recipes, or upload an image...")
-        
-        # Image upload for chat
         uploaded_image = st.file_uploader(
             "📷 Upload image for chat",
             type=["jpg", "jpeg", "png"],
             key="chat_image_upload",
             help="Upload an image to discuss with AI"
         )
-        
-        # Camera controls
         st.markdown("**📸 Camera Controls**")
-        camera_mode = st.radio("Camera Mode", ["Rear Camera", "Front Camera"], key="chat_camera_mode", horizontal=True)
-        
         if "chat_camera_on" not in st.session_state:
             st.session_state.chat_camera_on = False
-            
         if not st.session_state.chat_camera_on:
             if st.button("Turn On Camera", key="chat_camera_on_btn", use_container_width=True):
                 st.session_state.chat_camera_on = True
                 st.experimental_rerun()
             camera_image = None
         else:
-            camera_image = None
-            if camera_mode == "Rear Camera":
-                camera_image = st.camera_input("📸 Take photo (Rear Camera)", key="chat_camera_rear")
-            else:
-                camera_image = st.camera_input("🤳 Take selfie (Front Camera)", key="chat_camera_front")
+            camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
             if st.button("Turn Off Camera", key="chat_camera_off_btn", use_container_width=True):
                 st.session_state.chat_camera_on = False
                 st.experimental_rerun()
     else:
         # Desktop layout - side by side
         col1, col2 = st.columns([3, 1])
-        
         with col1:
             user_input = st.chat_input("Ask me about cooking, recipes, or upload an image...")
-        
         with col2:
-            # Image upload for chat
             uploaded_image = st.file_uploader(
                 "📷 Upload image for chat",
                 type=["jpg", "jpeg", "png"],
                 key="chat_image_upload",
                 help="Upload an image to discuss with AI"
             )
-            
-            # Camera mode selector and on/off toggle
-            camera_mode = st.radio("Camera Mode", ["Rear Camera", "Front Camera"], key="chat_camera_mode")
             if "chat_camera_on" not in st.session_state:
                 st.session_state.chat_camera_on = False
             if not st.session_state.chat_camera_on:
@@ -321,18 +303,12 @@ def chat_page():
                     st.experimental_rerun()
                 camera_image = None
             else:
-                camera_image = None
-                if camera_mode == "Rear Camera":
-                    camera_image = st.camera_input("📸 Take photo (Rear Camera)", key="chat_camera_rear")
-                else:
-                    camera_image = st.camera_input("🤳 Take selfie (Front Camera)", key="chat_camera_front")
+                camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
                 if st.button("Turn Off Camera", key="chat_camera_off_btn"):
                     st.session_state.chat_camera_on = False
                     st.experimental_rerun()
-    
     # Handle user input
     if user_input or uploaded_image or ("chat_camera_on" in st.session_state and st.session_state.chat_camera_on and camera_image):
-        # Determine which image to use
         current_image = None
         if uploaded_image:
             current_image = Image.open(uploaded_image)
@@ -342,30 +318,20 @@ def chat_page():
             st.session_state.current_image = current_image
         elif st.session_state.current_image:
             current_image = st.session_state.current_image
-        
-        # Add user message to chat
         if user_input:
             st.session_state.messages.append({
                 "role": "user",
                 "content": user_input,
                 "image": current_image
             })
-            
-            # Get AI response
             with st.spinner("Thinking..."):
                 ai_response = chat_with_ai(user_input, current_image)
-            
-            # Add AI response to chat
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": ai_response,
                 "image": None
             })
-            
-            # Clear current image after processing
             st.session_state.current_image = None
-            
-            # Rerun to update chat display
             st.rerun()
     
     # Responsive quick action buttons
@@ -486,7 +452,7 @@ def recipe_generator_page():
     """Recipe generator with responsive design"""
     st.title("📷 AI Recipe Generator")
     st.markdown("Upload a picture of your fridge or ingredients and get AI-generated recipe ideas!")
-    st.info("📱 **Mobile Tip**: Use your browser's camera icon to switch between front and rear cameras. Use the camera mode selector below.")
+    st.info("📱 **Mobile Tip**: Use your browser's camera icon to switch between front and rear cameras.")
     
     # Responsive tabs
     tab1, tab2, tab3 = st.tabs(["📁 Upload Image", "📸 Take Photo", "💬 Chat with Image"])
@@ -509,30 +475,22 @@ def recipe_generator_page():
     
     with tab2:
         st.markdown("**📸 Camera Capture (Mobile Supported)**")
-        camera_mode = st.radio("Camera Mode", ["Rear Camera", "Front Camera"], key="recipe_camera_mode", horizontal=True)
-        
         if "recipe_camera_on" not in st.session_state:
             st.session_state.recipe_camera_on = False
-            
         if not st.session_state.recipe_camera_on:
             if st.button("Turn On Camera", key="recipe_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = True
                 st.experimental_rerun()
             camera_photo = None
         else:
-            camera_photo = None
-            if camera_mode == "Rear Camera":
-                camera_photo = st.camera_input("📸 Take photo of your ingredients (Rear Camera)", key="recipe_camera_rear")
-            else:
-                camera_photo = st.camera_input("🤳 Take selfie with ingredients (Front Camera)", key="recipe_camera_front")
+            camera_photo = st.camera_input("📸 Take photo", key="recipe_camera_default")
             if st.button("Turn Off Camera", key="recipe_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = False
                 st.experimental_rerun()
-                
         image = None
         if camera_photo is not None:
             image = Image.open(camera_photo)
-            st.image(image, caption=f'Captured Photo ({camera_mode})', use_column_width=True)
+            st.image(image, caption='Captured Photo', use_column_width=True)
             if st.button("Generate Recipes from Photo", use_container_width=True):
                 with st.spinner("Analyzing photo and generating recipes..."):
                     response_text = extract_ingredients_and_recipes(image)
@@ -548,27 +506,18 @@ def recipe_generator_page():
             help="Upload an image to ask questions about"
         )
         st.markdown("**📸 Camera Capture (Mobile Supported)**")
-        camera_mode = st.radio("Camera Mode", ["Rear Camera", "Front Camera"], key="recipe_chat_camera_mode", horizontal=True)
-        
         if "recipe_chat_camera_on" not in st.session_state:
             st.session_state.recipe_chat_camera_on = False
-            
         if not st.session_state.recipe_chat_camera_on:
             if st.button("Turn On Camera", key="recipe_chat_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = True
                 st.experimental_rerun()
             chat_camera = None
         else:
-            chat_camera = None
-            if camera_mode == "Rear Camera":
-                chat_camera = st.camera_input("📸 Take photo (Rear Camera)", key="recipe_chat_camera_rear")
-            else:
-                chat_camera = st.camera_input("🤳 Take selfie (Front Camera)", key="recipe_chat_camera_front")
+            chat_camera = st.camera_input("📸 Take photo", key="recipe_chat_camera_default")
             if st.button("Turn Off Camera", key="recipe_chat_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = False
                 st.experimental_rerun()
-                
-        # Determine which image to use
         current_image = None
         if chat_image:
             current_image = Image.open(chat_image)
