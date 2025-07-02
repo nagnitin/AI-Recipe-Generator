@@ -277,12 +277,14 @@ def chat_page():
             if st.button("Turn On Camera", key="chat_camera_on_btn", use_container_width=True):
                 st.session_state.chat_camera_on = True
                 st.experimental_rerun()
+            return
             camera_image = None
         else:
             camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
             if st.button("Turn Off Camera", key="chat_camera_off_btn", use_container_width=True):
                 st.session_state.chat_camera_on = False
                 st.experimental_rerun()
+            return
     else:
         # Desktop layout - side by side
         col1, col2 = st.columns([3, 1])
@@ -301,12 +303,14 @@ def chat_page():
                 if st.button("Turn On Camera", key="chat_camera_on_btn"):
                     st.session_state.chat_camera_on = True
                     st.experimental_rerun()
+                return
                 camera_image = None
             else:
                 camera_image = st.camera_input("📸 Take photo", key="chat_camera_default")
                 if st.button("Turn Off Camera", key="chat_camera_off_btn"):
                     st.session_state.chat_camera_on = False
                     st.experimental_rerun()
+                return
     # Handle user input
     if user_input or uploaded_image or ("chat_camera_on" in st.session_state and st.session_state.chat_camera_on and camera_image):
         current_image = None
@@ -481,12 +485,14 @@ def recipe_generator_page():
             if st.button("Turn On Camera", key="recipe_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = True
                 st.experimental_rerun()
+            return
             camera_photo = None
         else:
             camera_photo = st.camera_input("📸 Take photo", key="recipe_camera_default")
             if st.button("Turn Off Camera", key="recipe_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_camera_on = False
                 st.experimental_rerun()
+            return
         image = None
         if camera_photo is not None:
             image = Image.open(camera_photo)
@@ -512,12 +518,14 @@ def recipe_generator_page():
             if st.button("Turn On Camera", key="recipe_chat_camera_on_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = True
                 st.experimental_rerun()
+            return
             chat_camera = None
         else:
             chat_camera = st.camera_input("📸 Take photo", key="recipe_chat_camera_default")
             if st.button("Turn Off Camera", key="recipe_chat_camera_off_btn", use_container_width=True):
                 st.session_state.recipe_chat_camera_on = False
                 st.experimental_rerun()
+            return
         current_image = None
         if chat_image:
             current_image = Image.open(chat_image)
