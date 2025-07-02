@@ -6,14 +6,25 @@ import base64
 from datetime import datetime
 import io
 
-# Configure Gemini API key
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY", "AIzaSyC0lnDHppWlt3fldHJnx5wxDO73Dvi1ULQ"))
+# Configure Gemini API key (no fallback public key)
+api_key = os.getenv("AIzaSyCPWOOzVt8mvjqxNH1ym2gDloVzELtVWDE")
+if not api_key:
+    st.error("No Google API key found. Please set the GOOGLE_API_KEY environment variable.")
+    st.stop()
+else:
+    try:
+        genai.configure(api_key=api_key)
+    except Exception as e:
+        st.error(f"Failed to configure Gemini API: {e}")
+        st.stop()
 
-# Initialize Gemini model
-model = genai.GenerativeModel("models/gemini-1.5-flash")
-
-# Initialize chat model for conversation
-chat_model = genai.GenerativeModel("models/gemini-1.5-flash")
+# Initialize Gemini model with error handling
+try:
+    model = genai.GenerativeModel("models/gemini-1.5-flash")
+    chat_model = genai.GenerativeModel("models/gemini-1.5-flash")
+except Exception as e:
+    st.error(f"Failed to initialize Gemini model: {e}")
+    st.stop()
 
 def initialize_session_state():
     """Initialize session state variables"""
@@ -36,31 +47,36 @@ Each recipe should have:
 - Ingredient list
 - Steps (in bullet points)
 """
-    response = model.generate_content([prompt, image])
-    return response.text
+    try:
+        response = model.generate_content([prompt, image])
+        return response.text
+    except Exception as e:
+        st.error(f"Gemini API error: {e}")
+        return "Sorry, I couldn't process the image. Please try again later."
 
 def chat_with_ai(message, image=None):
     """Chat with AI about recipes and cooking"""
-    if image:
-        # If image is provided, analyze it and respond
-        prompt = f"""
+    try:
+        if image:
+            prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
 
 Please analyze this image and respond to their question. If they're asking about ingredients or recipes, 
 provide helpful cooking advice, recipe suggestions, or ingredient information based on what you see in the image.
 """
-        response = chat_model.generate_content([prompt, image])
-    else:
-        # Text-only conversation
-        prompt = f"""
+            response = chat_model.generate_content([prompt, image])
+        else:
+            prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
 
 Please provide helpful cooking advice, recipe suggestions, cooking tips, or answer any culinary questions they might have.
 Be friendly and informative in your response.
 """
-        response = chat_model.generate_content(prompt)
-    
-    return response.text
+            response = chat_model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"Gemini API error: {e}")
+        return "Sorry, I couldn't process your request. Please try again later."
 
 def display_chat_message(role, content, image=None):
     """Display a chat message with optional image"""
