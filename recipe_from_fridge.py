@@ -7,7 +7,7 @@ from datetime import datetime
 import io
 
 # Configure Gemini API key (no fallback public key)
-api_key = os.getenv("AIzaSyCPWOOzVt8mvjqxNH1ym2gDloVzELtVWDE")
+api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     st.error("No Google API key found. Please set the GOOGLE_API_KEY environment variable.")
     st.stop()
