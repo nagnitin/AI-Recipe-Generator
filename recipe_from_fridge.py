@@ -55,7 +55,10 @@ Each recipe should have:
 """
     try:
         image_bytes = pil_image_to_bytes(image)
-        response = vision_model.generate_content([prompt, image_bytes])
+        response = vision_model.generate_content([
+            {"text": prompt},
+            {"inline_data": {"mime_type": "image/png", "data": image_bytes}}
+        ])
         return response.text
     except Exception as e:
         st.error(f"Gemini API error: {e}")
@@ -72,7 +75,10 @@ Please analyze this image and respond to their question. If they're asking about
 provide helpful cooking advice, recipe suggestions, or ingredient information based on what you see in the image.
 """
             image_bytes = pil_image_to_bytes(image)
-            response = vision_model.generate_content([prompt, image_bytes])
+            response = vision_model.generate_content([
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/png", "data": image_bytes}}
+            ])
         else:
             prompt = f"""
 You are a helpful cooking assistant. The user said: "{message}"
